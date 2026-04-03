@@ -1,0 +1,9 @@
+# Optional: Prometheus scrape config
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "ruki-api"
+    static_configs:
+      - targets: ["api:8000"]
+    metrics_path: /metrics

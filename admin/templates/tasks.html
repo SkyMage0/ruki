@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Заказы — Свободные руки{% endblock %}
+{% block content %}
+<h1>Заказы</h1>
+<p>
+    <a href="/admin/tasks" class="btn">Все</a>
+    <a href="/admin/tasks?status=open" class="btn">Открытые</a>
+    <a href="/admin/tasks?status=in_progress" class="btn">В работе</a>
+    <a href="/admin/tasks?status=completed" class="btn">Завершённые</a>
+    <a href="/admin/tasks?status=disputed" class="btn">Спорные</a>
+</p>
+<table class="card">
+    <thead>
+        <tr><th>ID</th><th>Заголовок</th><th>Категория</th><th>Статус</th><th>Сумма</th><th>Создан</th></tr>
+    </thead>
+    <tbody>
+        {% for t in tasks %}
+        <tr>
+            <td>{{ t.id }}</td>
+            <td>{{ t.title }}</td>
+            <td>{{ t.category }}</td>
+            <td>{{ t.status }}</td>
+            <td>{{ t.payment_amount }} ({{ t.payment_type }})</td>
+            <td>{{ t.created_at.strftime("%Y-%m-%d %H:%M") if t.created_at else "—" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

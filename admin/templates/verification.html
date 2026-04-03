@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Верификация — Свободные руки{% endblock %}
+{% block content %}
+<h1>Заявки на верификацию</h1>
+{% for r in requests %}
+<div class="card">
+    <p><strong>ID заявки:</strong> {{ r.id }} | <strong>User ID:</strong> {{ r.user_id }} | <strong>Тип документа:</strong> {{ r.document_type }}</p>
+    {% if r.document_photo_file_id %}
+    <p>Фото документа: file_id в Telegram (просмотр в боте)</p>
+    {% endif %}
+    <form method="post" action="/admin/verification/{{ r.id }}/approve" style="display:inline;">
+        <button type="submit" class="btn-success">Подтвердить</button>
+    </form>
+    <form method="post" action="/admin/verification/{{ r.id }}/reject" style="display:inline;">
+        <button type="submit" class="btn-danger">Отклонить</button>
+    </form>
+</div>
+{% else %}
+<p>Нет ожидающих заявок.</p>
+{% endfor %}
+{% endblock %}

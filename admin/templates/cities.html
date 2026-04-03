@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Города — Свободные руки{% endblock %}
+{% block content %}
+<h1>Города</h1>
+<div class="card">
+    <form method="post" action="/admin/cities/add">
+        <input type="text" name="name" placeholder="Название города" required>
+        <input type="text" name="timezone" value="Europe/Moscow" placeholder="Часовой пояс">
+        <button type="submit">Добавить</button>
+    </form>
+</div>
+<table class="card">
+    <thead>
+        <tr><th>ID</th><th>Название</th><th>Часовой пояс</th><th>Активен</th><th></th></tr>
+    </thead>
+    <tbody>
+        {% for c in cities %}
+        <tr>
+            <td>{{ c.id }}</td>
+            <td>{{ c.name }}</td>
+            <td>{{ c.timezone }}</td>
+            <td>{{ "Да" if c.is_active else "Нет" }}</td>
+            <td>
+                <form method="post" action="/admin/cities/{{ c.id }}/toggle">
+                    <button type="submit">{{ "Выкл" if c.is_active else "Вкл" }}</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

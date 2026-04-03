@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Пользователи — Свободные руки{% endblock %}
+{% block content %}
+<h1>Поиск пользователей</h1>
+<div class="card">
+    <form method="get" action="/admin/users">
+        <input type="text" name="q" value="{{ q }}" placeholder="ID, telegram_id или имя">
+        <button type="submit">Искать</button>
+    </form>
+</div>
+{% if users %}
+<table class="card">
+    <thead>
+        <tr><th>ID</th><th>Telegram ID</th><th>Имя</th><th>Роль</th><th>Рейтинг</th><th>Верифицирован</th><th>Задач</th></tr>
+    </thead>
+    <tbody>
+        {% for u in users %}
+        <tr>
+            <td>{{ u.id }}</td>
+            <td>{{ u.telegram_id }}</td>
+            <td>{{ u.full_name or "—" }}</td>
+            <td>{{ u.role }}</td>
+            <td>{{ "%.1f"|format(u.rating) }}</td>
+            <td>{{ "Да" if u.is_verified else "Нет" }}</td>
+            <td>{{ u.completed_tasks_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% elif q %}
+<p>Ничего не найдено.</p>
+{% endif %}
+{% endblock %}

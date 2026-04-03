@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Админка — Свободные руки{% endblock %}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem; background: #f5f5f5; }
+        nav { background: #333; color: #fff; padding: 0.75rem 1rem; margin: -1rem -1rem 1rem -1rem; }
+        nav a { color: #fff; margin-right: 1rem; text-decoration: none; }
+        nav a:hover { text-decoration: underline; }
+        .card { background: #fff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #fafafa; }
+        button, .btn { padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; background: #333; color: #fff; text-decoration: none; display: inline-block; font-size: 14px; }
+        button:hover, .btn:hover { background: #555; }
+        .btn-danger { background: #c00; }
+        .btn-success { background: #080; }
+        form { display: inline; }
+        input[type=text], input[type=number] { padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/admin/">Дашборд</a>
+        <a href="/admin/cities">Города</a>
+        <a href="/admin/verification">Верификация</a>
+        <a href="/admin/users">Пользователи</a>
+        <a href="/admin/tasks">Заказы</a>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

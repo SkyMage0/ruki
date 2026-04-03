@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Дашборд — Свободные руки{% endblock %}
+{% block content %}
+<h1>Дашборд</h1>
+<div class="card">
+    <p><strong>Пользователей:</strong> {{ users_count }}</p>
+    <p><strong>Заказов всего:</strong> {{ tasks_count }}</p>
+    <p><strong>Открытых заказов:</strong> {{ open_tasks }}</p>
+    <p><strong>На верификации:</strong> {{ pending_verification }}</p>
+</div>
+{% endblock %}
