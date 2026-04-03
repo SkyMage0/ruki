@@ -1,13 +1,16 @@
 """Log bot events (no PII)."""
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from core.monitoring import get_logger, bot_commands_total
+from core.monitoring import bot_commands_total, get_logger
 
 logger = get_logger()
 
 
-async def logging_middleware(application, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def logging_middleware(
+    application, update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     """Increment command metric. No user id or text in logs by default."""
     if update.effective_message and update.effective_message.text:
         text = update.effective_message.text.strip()

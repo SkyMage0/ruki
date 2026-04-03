@@ -1,16 +1,21 @@
 """FastAPI app: health, metrics, admin. Sentry + CORS + middleware."""
+
 import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.routes import admin, health, metrics
 from core.config import get_settings
-from core.monitoring import init_sentry, configure_logging, get_logger
-from core.monitoring import http_requests_total, request_duration_seconds
-from core.database import get_db
+from core.monitoring import (
+    configure_logging,
+    get_logger,
+    http_requests_total,
+    init_sentry,
+    request_duration_seconds,
+)
 from core.redis_client import close_redis
-from api.routes import health, metrics, admin
 
 configure_logging()
 init_sentry()

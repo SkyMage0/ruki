@@ -1,8 +1,9 @@
 """Prometheus /metrics endpoint."""
-from fastapi import APIRouter
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
-from core.monitoring import get_metrics_registry, active_users_gauge
+from fastapi import APIRouter
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
+from core.monitoring import active_users_gauge, get_metrics_registry
 from core.redis_client import get_active_users_count
 
 router = APIRouter(tags=["metrics"])

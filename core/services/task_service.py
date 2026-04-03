@@ -1,14 +1,14 @@
 """Task CRUD and listing."""
-from datetime import datetime
-from typing import List, Optional
 
-from sqlalchemy import select, and_, func
+from datetime import datetime
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from core.models import Task, Bid, User
-from core.models.task import TaskStatus
+from core.models import Bid, Task
 from core.models.bid import BidStatus
+from core.models.task import TaskStatus
 
 
 async def create_task(
@@ -45,14 +45,18 @@ async def create_task(
     return task
 
 
-async def get_task_by_id(session: AsyncSession, task_id: int) -> Optional[Task]:
+async def get_task_by_id(session: AsyncSession, task_id: int) -> Task | None:
     result = await session.execute(
-        select(Task).where(Task.id == task_id).options(selectinload(Task.customer), selectinload(Task.city))
+        select(Task)
+        .where(Task.id == task_id)
+        .options(selectinload(Task.customer), selectinload(Task.city))
     )
     return result.scalar_one_or_none()
 
 
-async def get_open_tasks_by_city(session: AsyncSession, city_id: int, limit: int = 50) -> List[Task]:
+async def get_open_tasks_by_city(
+    session: AsyncSession, city_id: int, limit: int = 50
+) -> list[Task]:
     """Открытые заказы по городу, у которых ещё не набрано workers_needed исполнителей."""
     accepted_count = (
         select(func.count(Bid.id))
@@ -72,14 +76,14 @@ async def get_open_tasks_by_city(session: AsyncSession, city_id: int, limit: int
     return list(result.scalars().all())
 
 
-async def get_tasks_by_customer(session: AsyncSession, customer_id: int) -> List[Task]:
+async def get_tasks_by_customer(session: AsyncSession, customer_id: int) -> list[Task]:
     result = await session.execute(
         select(Task).where(Task.customer_id == customer_id).order_by(Task.created_at.desc())
     )
     return list(result.scalars().all())
 
 
-async def get_tasks_where_worker_bidded(session: AsyncSession, worker_id: int) -> List[Task]:
+async def get_tasks_where_worker_bidded(session: AsyncSession, worker_id: int) -> list[Task]:
     result = await session.execute(
         select(Task)
         .join(Bid, Bid.task_id == Task.id)
@@ -89,7 +93,7 @@ async def get_tasks_where_worker_bidded(session: AsyncSession, worker_id: int) -
     return list(result.unique().scalars().all())
 
 
-async def set_task_status(session: AsyncSession, task_id: int, status: str) -> Optional[Task]:
+async def set_task_status(session: AsyncSession, task_id: int, status: str) -> Task | None:
     result = await session.execute(select(Task).where(Task.id == task_id))
     task = result.scalar_one_or_none()
     if task:

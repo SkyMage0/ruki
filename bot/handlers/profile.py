@@ -1,14 +1,14 @@
 """Profile and verification."""
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from core.database import AsyncSessionLocal
-from core.monitoring import bot_commands_total
-from core.services.user_service import get_user_by_telegram_id
-from core.services.city_service import get_active_cities_cached
-from core.models.user import UserRole
-
 from bot.keyboards.inline import profile_keyboard
+from core.database import AsyncSessionLocal
+from core.models.user import UserRole
+from core.monitoring import bot_commands_total
+from core.services.city_service import get_active_cities_cached
+from core.services.user_service import get_user_by_telegram_id
 
 
 def _profile_text(db_user, city_name: str) -> str:
@@ -35,6 +35,7 @@ async def cmd_profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if not user:
         return
     from core.redis_client import record_active_user
+
     await record_active_user(user.id)
 
     async with AsyncSessionLocal() as session:

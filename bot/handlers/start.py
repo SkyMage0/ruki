@@ -1,11 +1,12 @@
 """Registration: /start — request phone, city, role."""
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
+
+from telegram import KeyboardButton, ReplyKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from core.database import AsyncSessionLocal
 from core.monitoring import bot_commands_total, get_logger
-from core.services.user_service import get_user_by_telegram_id, create_user
 from core.services.city_service import get_active_cities_cached
+from core.services.user_service import get_user_by_telegram_id
 
 logger = get_logger()
 
@@ -31,6 +32,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not user:
         return
     from core.redis_client import record_active_user
+
     await record_active_user(user.id)
 
     async with AsyncSessionLocal() as session:
@@ -69,7 +71,9 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
     contact = update.message.contact
     if not contact or not contact.phone_number:
-        await update.message.reply_text("Не удалось получить номер. Нажмите кнопку «Отправить номер телефона». ")
+        await update.message.reply_text(
+            "Не удалось получить номер. Нажмите кнопку «Отправить номер телефона». "
+        )
         return
 
     phone = contact.phone_number
@@ -84,16 +88,24 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
 
     from bot.keyboards.inline import cities_keyboard
+
     await update.message.reply_text("Выберите город:", reply_markup=cities_keyboard(cities))
 
 
-async def handle_role_choice(update: Update, context: ContextTypes.DEFAULT_TYPE, city_id: int) -> None:
+async def handle_role_choice(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, city_id: int
+) -> None:
     """After city chosen: ask role."""
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
     context.user_data["city_id"] = city_id
     context.user_data["register_step"] = "role"
-    kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Заказчик", callback_data="role:customer")],
-        [InlineKeyboardButton("Исполнитель", callback_data="role:worker")],
-    ])
-    await update.callback_query.edit_message_text("Кем вы будете пользоваться сервисом?", reply_markup=kb)
+    kb = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("Заказчик", callback_data="role:customer")],
+            [InlineKeyboardButton("Исполнитель", callback_data="role:worker")],
+        ]
+    )
+    await update.callback_query.edit_message_text(
+        "Кем вы будете пользоваться сервисом?", reply_markup=kb
+    )

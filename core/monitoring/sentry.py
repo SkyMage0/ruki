@@ -1,4 +1,5 @@
 """Sentry initialization. No PII sent."""
+
 import os
 
 import sentry_sdk

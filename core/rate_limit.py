@@ -1,6 +1,6 @@
 """Rate limiting via Redis. Keys by telegram_id or user identifier."""
+
 import time
-from typing import Optional
 
 from core.config import get_settings
 from core.redis_client import get_redis

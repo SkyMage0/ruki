@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from sqlalchemy import String, Text, Integer, ForeignKey, DateTime, Boolean
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Index
 
 from .base import Base
+from .bid import Bid
+from .city import City
+from .review import Review
+from .user import User
 
 
 class TaskCategory(str, Enum):
@@ -49,10 +53,10 @@ class Task(Base):
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_urgent: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    customer: Mapped["User"] = relationship("User", back_populates="tasks_as_customer")
-    city: Mapped["City"] = relationship("City", back_populates="tasks")
-    bids: Mapped[list["Bid"]] = relationship("Bid", back_populates="task")
-    reviews: Mapped[list["Review"]] = relationship("Review", back_populates="task")
+    customer: Mapped[User] = relationship("User", back_populates="tasks_as_customer")
+    city: Mapped[City] = relationship("City", back_populates="tasks")
+    bids: Mapped[list[Bid]] = relationship("Bid", back_populates="task")
+    reviews: Mapped[list[Review]] = relationship("Review", back_populates="task")
 
     __table_args__ = (Index("ix_tasks_city_status_created", "city_id", "status", "created_at"),)
 

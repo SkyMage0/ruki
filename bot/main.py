@@ -1,20 +1,20 @@
 """Telegram Bot entry point. Sentry + logging. No PII in logs."""
-import os
-import asyncio
+
 import logging
+import os
 
 from telegram import Update
 from telegram.ext import (
     Application,
+    CallbackQueryHandler,
     CommandHandler,
     MessageHandler,
-    CallbackQueryHandler,
     filters,
 )
 
+from bot.handlers import profile, start, support, tasks
 from core.config import get_settings
-from core.monitoring import init_sentry, configure_logging, get_logger
-from bot.handlers import start, tasks, profile, support
+from core.monitoring import configure_logging, get_logger, init_sentry
 
 configure_logging()
 init_sentry()
@@ -60,13 +60,17 @@ def main() -> None:
     app.add_handler(MessageHandler(filters.CONTACT, start.handle_contact))
 
     # Главное меню (reply-кнопки)
-    menu_filter = filters.TEXT & ~filters.COMMAND & (
-        filters.Regex("^Создать заказ$") |
-        filters.Regex("^Мои заказы$") |
-        filters.Regex("^Найти работу$") |
-        filters.Regex("^Мои отклики$") |
-        filters.Regex("^Профиль$") |
-        filters.Regex("^Поддержка$")
+    menu_filter = (
+        filters.TEXT
+        & ~filters.COMMAND
+        & (
+            filters.Regex("^Создать заказ$")
+            | filters.Regex("^Мои заказы$")
+            | filters.Regex("^Найти работу$")
+            | filters.Regex("^Мои отклики$")
+            | filters.Regex("^Профиль$")
+            | filters.Regex("^Поддержка$")
+        )
     )
     app.add_handler(MessageHandler(menu_filter, main_menu_router))
 

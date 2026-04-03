@@ -1,13 +1,13 @@
 """Redis connection for cache and rate limiting."""
+
 import os
-from typing import Optional
 
 import redis.asyncio as redis
 from redis.asyncio import Redis
 
 from core.config import get_settings
 
-_redis: Optional[Redis] = None
+_redis: Redis | None = None
 
 
 async def get_redis() -> Redis:
@@ -32,6 +32,7 @@ ACTIVE_WINDOW = 3600  # 1 hour
 async def record_active_user(telegram_id: int) -> None:
     """Record user activity for active_users_gauge (last hour)."""
     import time
+
     r = await get_redis()
     now = time.time()
     await r.zadd(ACTIVE_USERS_ZSET, {str(telegram_id): now})
@@ -42,6 +43,7 @@ async def record_active_user(telegram_id: int) -> None:
 async def get_active_users_count() -> int:
     """Count distinct users active in last hour."""
     import time
+
     r = await get_redis()
     now = time.time()
     await r.zremrangebyscore(ACTIVE_USERS_ZSET, 0, now - ACTIVE_WINDOW)

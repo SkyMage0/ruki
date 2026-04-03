@@ -2,11 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from sqlalchemy import String, Boolean, Integer, Float, ForeignKey, DateTime, BigInteger
+
+from sqlalchemy import BigInteger, Boolean, DateTime, Float, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Index
 
 from .base import Base
+from .bid import Bid
+from .city import City
+from .review import Review
+from .task import Task
+from .verification import VerificationRequest
 
 
 class UserRole(str, Enum):
@@ -29,18 +34,18 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     last_activity: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    city: Mapped["City"] = relationship("City", back_populates="users")
-    tasks_as_customer: Mapped[list["Task"]] = relationship(
+    city: Mapped[City] = relationship("City", back_populates="users")
+    tasks_as_customer: Mapped[list[Task]] = relationship(
         "Task", back_populates="customer", foreign_keys="Task.customer_id"
     )
-    bids: Mapped[list["Bid"]] = relationship("Bid", back_populates="worker")
-    reviews_received: Mapped[list["Review"]] = relationship(
+    bids: Mapped[list[Bid]] = relationship("Bid", back_populates="worker")
+    reviews_received: Mapped[list[Review]] = relationship(
         "Review", back_populates="to_user", foreign_keys="Review.to_user_id"
     )
-    reviews_given: Mapped[list["Review"]] = relationship(
+    reviews_given: Mapped[list[Review]] = relationship(
         "Review", back_populates="from_user", foreign_keys="Review.from_user_id"
     )
-    verification_requests: Mapped[list["VerificationRequest"]] = relationship(
+    verification_requests: Mapped[list[VerificationRequest]] = relationship(
         "VerificationRequest", back_populates="user"
     )
 

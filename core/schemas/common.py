@@ -1,6 +1,4 @@
 from pydantic import BaseModel
-from datetime import datetime
-from typing import Optional
 
 
 class CityRead(BaseModel):
@@ -15,7 +13,7 @@ class CityRead(BaseModel):
 
 class UserBrief(BaseModel):
     id: int
-    full_name: Optional[str] = None
+    full_name: str | None = None
     rating: float
     is_verified: bool
     completed_tasks_count: int

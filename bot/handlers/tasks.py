@@ -1,50 +1,44 @@
 """Task creation, list, my tasks, bid flow."""
-import asyncio
-from telegram import Update, ReplyKeyboardRemove
-from telegram.ext import ContextTypes
-from sqlalchemy import select
 
+import asyncio
+
+from sqlalchemy import select
+from telegram import Update
+from telegram.ext import ContextTypes
+
+from bot.keyboards.inline import (
+    bid_choice_keyboard,
+    bid_decision_keyboard,
+    categories_keyboard,
+    confirm_task_keyboard,
+    payment_type_keyboard,
+    profile_cities_keyboard,
+    profile_keyboard,
+    question_reply_keyboard,
+    task_actions_keyboard,
+    when_keyboard,
+)
 from core.database import AsyncSessionLocal
-from core.monitoring import bot_commands_total, tasks_created_total, bids_total, get_logger
-from core.rate_limit import check_create_task_limit, check_create_bid_limit
-from core.services.user_service import get_user_by_telegram_id, create_user
+from core.models import User
+from core.models.user import UserRole
+from core.monitoring import bids_total, bot_commands_total, get_logger, tasks_created_total
+from core.rate_limit import check_create_bid_limit, check_create_task_limit
+from core.redis_client import record_active_user
+from core.services.bid_service import (
+    accept_bid,
+    count_accepted_bids_for_task,
+    create_bid,
+    reject_bid,
+)
 from core.services.city_service import get_active_cities_cached
 from core.services.task_service import (
     create_task,
-    get_task_by_id,
     get_open_tasks_by_city,
+    get_task_by_id,
     get_tasks_by_customer,
     get_tasks_where_worker_bidded,
-    set_task_status,
 )
-from core.services.bid_service import (
-    create_bid,
-    get_bids_for_task,
-    accept_bid,
-    reject_bid,
-    get_bid_by_id,
-    count_accepted_bids_for_task,
-)
-from core.models import User
-from core.models.task import TaskCategory, PaymentType
-from core.models.bid import BidStatus
-from core.models.user import UserRole
-from core.redis_client import record_active_user
-
-from bot.keyboards.inline import (
-    cities_keyboard,
-    categories_keyboard,
-    payment_type_keyboard,
-    confirm_task_keyboard,
-    task_actions_keyboard,
-    bid_decision_keyboard,
-    bid_choice_keyboard,
-    question_reply_keyboard,
-    when_keyboard,
-    my_tasks_tabs_keyboard,
-    profile_keyboard,
-    profile_cities_keyboard,
-)
+from core.services.user_service import create_user, get_user_by_telegram_id
 
 logger = get_logger()
 
@@ -81,7 +75,9 @@ async def cmd_new_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     allowed, remaining = await check_create_task_limit(user.id)
     if not allowed:
-        await update.message.reply_text(f"Лимит: 5 заказов в час. Попробуйте позже. (Осталось: {remaining})")
+        await update.message.reply_text(
+            f"Лимит: 5 заказов в час. Попробуйте позже. (Осталось: {remaining})"
+        )
         return
 
     # Город берём из профиля пользователя, заново не спрашиваем
@@ -235,6 +231,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             cities = await get_active_cities_cached(session)
         city_name = next((c.name for c in cities if c.id == city_id), "не указан")
         from bot.handlers.profile import _profile_text
+
         text = _profile_text(db_user, city_name)
         await q.edit_message_text(text, reply_markup=profile_keyboard())
         return
@@ -242,6 +239,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     # Registration: city -> role -> create user
     if data.startswith("city:") and context.user_data.get("register_step") == "city":
         from bot.handlers.start import handle_role_choice
+
         city_id = int(data.split(":")[1])
         await handle_role_choice(update, context, city_id)
         return
@@ -253,23 +251,22 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if phone is not None and city_id is not None:
             try:
                 async with AsyncSessionLocal() as session:
-                    usr = await create_user(
-                        session, user.id, phone=phone, full_name=user.full_name or user.first_name,
-                        role=role, city_id=city_id
+                    await create_user(
+                        session,
+                        user.id,
+                        phone=phone,
+                        full_name=user.full_name or user.first_name,
+                        role=role,
+                        city_id=city_id,
                     )
                     await session.commit()
                 context.user_data.clear()
                 if role == UserRole.customer.value:
-                    text = (
-                        "Регистрация завершена!\n\n"
-                        "Вы — заказчик."
-                    )
+                    text = "Регистрация завершена!\n\n" "Вы — заказчик."
                 else:
-                    text = (
-                        "Регистрация завершена!\n\n"
-                        "Вы — исполнитель."
-                    )
+                    text = "Регистрация завершена!\n\n" "Вы — исполнитель."
                 from bot.handlers.start import _main_menu_keyboard
+
                 await q.edit_message_text(text, reply_markup=_main_menu_keyboard(role))
             except Exception as e:
                 logger.exception("registration_failed", error=str(e))
@@ -323,7 +320,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 is_urgent=bool(d.get("is_urgent", False)),
             )
             city_name = "unknown"
-            for c in (await get_active_cities_cached(session)):
+            for c in await get_active_cities_cached(session):
                 if c.id == d["city_id"]:
                     city_name = c.name
                     break
@@ -332,7 +329,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         logger.info("task_created", task_id=task.id, user_id=db_user.id, city=city_name)
         context.user_data.pop(NEW_TASK_STEP, None)
         context.user_data.pop(NEW_TASK_DATA, None)
-        await q.edit_message_text(f"Заказ #{task.id} опубликован. Исполнители в вашем городе получат уведомление.")
+        await q.edit_message_text(
+            f"Заказ #{task.id} опубликован. Исполнители в вашем городе получат уведомление."
+        )
+
         # Notify workers in city (non-blocking)
         async def notify_workers():
             async with AsyncSessionLocal() as s:
@@ -350,6 +350,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                     await context.bot.send_message(chat_id=tid, text=msg)
                 except Exception as e:
                     logger.info("bot_notify_error", error=str(e))
+
         asyncio.create_task(notify_workers())
         return
 
@@ -444,8 +445,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     # Accept / Reject bid (customer)
     if data.startswith("accept_bid:"):
         bid_id = int(data.split(":")[1])
-        from core.services.user_service import get_phone_decrypted, get_user_by_id
         from core.models.task import Task
+        from core.services.user_service import get_phone_decrypted, get_user_by_id
 
         async with AsyncSessionLocal() as session:
             bid = await accept_bid(session, bid_id)
@@ -462,7 +463,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             customer_id = res.scalar_one_or_none()
 
             worker = await get_user_by_id(session, worker_id)
-            customer = await get_user_by_id(session, customer_id) if customer_id is not None else None
+            customer = (
+                await get_user_by_id(session, customer_id) if customer_id is not None else None
+            )
 
             worker_phone = get_phone_decrypted(worker) if worker else None
             customer_phone = get_phone_decrypted(customer) if customer else None
@@ -537,7 +540,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if step == "address":
         context.user_data[NEW_TASK_DATA]["address_text"] = text[:500]
         context.user_data[NEW_TASK_STEP] = "workers_needed"
-        await update.message.reply_text("Сколько исполнителей нужно? Введите число (например, 1 или 2).")
+        await update.message.reply_text(
+            "Сколько исполнителей нужно? Введите число (например, 1 или 2)."
+        )
         return
 
     if step == "workers_needed":
@@ -546,7 +551,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             if count <= 0:
                 raise ValueError("positive")
         except ValueError:
-            await update.message.reply_text("Введите целое положительное число (количество исполнителей).")
+            await update.message.reply_text(
+                "Введите целое положительное число (количество исполнителей)."
+            )
             return
         context.user_data[NEW_TASK_DATA]["workers_needed"] = count
         context.user_data[NEW_TASK_STEP] = "when"
@@ -560,6 +567,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     if step == "when":
         from datetime import datetime as _dt
+
         text_clean = text.strip()
         try:
             scheduled = _dt.strptime(text_clean, "%d.%m %H:%M")
@@ -607,10 +615,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         )
         if when_line:
             summary += when_line
-        summary += (
-            f"Нужно исполнителей: {d.get('workers_needed', 1)}\n"
-            f"Оплата: {pay_text}"
-        )
+        summary += f"Нужно исполнителей: {d.get('workers_needed', 1)}\n" f"Оплата: {pay_text}"
         await update.message.reply_text(summary, reply_markup=confirm_task_keyboard())
         return
 

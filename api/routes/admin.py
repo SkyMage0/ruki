@@ -1,20 +1,21 @@
 """Admin panel API and Jinja2 pages: cities, verification, disputes, users, stats."""
-from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, func, or_
-from sqlalchemy.ext.asyncio import AsyncSession
 from pathlib import Path
 
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy import func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.database import get_db
-from core.models import City, User, Task, VerificationRequest, Review
-from core.schemas.common import CityRead
+from core.models import City, Task, User, VerificationRequest
 from core.services.city_service import get_city_by_id, invalidate_cities_cache
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent.parent / "admin" / "templates"))
+templates = Jinja2Templates(
+    directory=str(Path(__file__).resolve().parent.parent.parent / "admin" / "templates")
+)
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -22,9 +23,15 @@ async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     """Dashboard: counts."""
     users_count = (await db.execute(select(func.count(User.id)))).scalar() or 0
     tasks_count = (await db.execute(select(func.count(Task.id)))).scalar() or 0
-    open_tasks = (await db.execute(select(func.count(Task.id)).where(Task.status == "open"))).scalar() or 0
+    open_tasks = (
+        await db.execute(select(func.count(Task.id)).where(Task.status == "open"))
+    ).scalar() or 0
     pending_verification = (
-        await db.execute(select(func.count(VerificationRequest.id)).where(VerificationRequest.status == "pending"))
+        await db.execute(
+            select(func.count(VerificationRequest.id)).where(
+                VerificationRequest.status == "pending"
+            )
+        )
     ).scalar() or 0
     return templates.TemplateResponse(
         "dashboard.html",
@@ -72,10 +79,14 @@ async def admin_city_toggle(city_id: int, db: AsyncSession = Depends(get_db)):
 @router.get("/verification", response_class=HTMLResponse)
 async def admin_verification_list(request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(VerificationRequest).where(VerificationRequest.status == "pending").order_by(VerificationRequest.created_at.desc())
+        select(VerificationRequest)
+        .where(VerificationRequest.status == "pending")
+        .order_by(VerificationRequest.created_at.desc())
     )
     requests_list = result.scalars().all()
-    return templates.TemplateResponse("verification.html", {"request": request, "requests": requests_list})
+    return templates.TemplateResponse(
+        "verification.html", {"request": request, "requests": requests_list}
+    )
 
 
 @router.post("/verification/{req_id}/approve")
@@ -106,22 +117,28 @@ async def admin_verification_reject(req_id: int, db: AsyncSession = Depends(get_
 @router.get("/users", response_class=HTMLResponse)
 async def admin_users_search(
     request: Request,
-    q: Optional[str] = None,
+    q: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     users = []
     if q:
         try:
             uid = int(q)
-            result = await db.execute(select(User).where(or_(User.id == uid, User.telegram_id == uid)))
+            result = await db.execute(
+                select(User).where(or_(User.id == uid, User.telegram_id == uid))
+            )
         except ValueError:
             result = await db.execute(select(User).where(User.full_name.ilike(f"%{q}%")))
         users = list(result.scalars().all())
-    return templates.TemplateResponse("users.html", {"request": request, "users": users, "q": q or ""})
+    return templates.TemplateResponse(
+        "users.html", {"request": request, "users": users, "q": q or ""}
+    )
 
 
 @router.get("/tasks", response_class=HTMLResponse)
-async def admin_tasks_list(request: Request, status: Optional[str] = None, db: AsyncSession = Depends(get_db)):
+async def admin_tasks_list(
+    request: Request, status: str | None = None, db: AsyncSession = Depends(get_db)
+):
     query = select(Task).order_by(Task.created_at.desc())
     if status:
         query = query.where(Task.status == status)

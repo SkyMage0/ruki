@@ -1,9 +1,9 @@
 from .base import Base
-from .city import City
-from .user import User
-from .task import Task, TaskCategory, TaskStatus, PaymentType
 from .bid import Bid, BidStatus
+from .city import City
 from .review import Review
+from .task import PaymentType, Task, TaskCategory, TaskStatus
+from .user import User
 from .verification import VerificationRequest, VerificationStatus
 
 __all__ = [

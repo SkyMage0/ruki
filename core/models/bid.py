@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from sqlalchemy import String, Text, Integer, ForeignKey, DateTime
+
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import UniqueConstraint
 
 from .base import Base
+from .task import Task
+from .user import User
 
 
 class BidStatus(str, Enum):
@@ -26,8 +28,8 @@ class Bid(Base):
     status: Mapped[str] = mapped_column(String(20), default=BidStatus.pending.value, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
-    task: Mapped["Task"] = relationship("Task", back_populates="bids")
-    worker: Mapped["User"] = relationship("User", back_populates="bids")
+    task: Mapped[Task] = relationship("Task", back_populates="bids")
+    worker: Mapped[User] = relationship("User", back_populates="bids")
 
     __table_args__ = (UniqueConstraint("task_id", "worker_id", name="uq_bids_task_worker"),)
 

@@ -1,7 +1,6 @@
 """Encryption service for PII: phones, document numbers. Keys from env only."""
+
 import base64
-import os
-from typing import Optional
 
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
@@ -35,7 +34,7 @@ class EncryptionService:
             return ""
         return self._fernet.encrypt(plain.encode()).decode()
 
-    def decrypt(self, cipher: str) -> Optional[str]:
+    def decrypt(self, cipher: str) -> str | None:
         if not cipher:
             return None
         try:
@@ -45,7 +44,7 @@ class EncryptionService:
 
 
 # Singleton for app use
-_encryption: Optional[EncryptionService] = None
+_encryption: EncryptionService | None = None
 
 
 def get_encryption() -> EncryptionService:

@@ -1,5 +1,6 @@
 """Prometheus metrics for bot and API."""
-from prometheus_client import Counter, Gauge, Histogram, REGISTRY
+
+from prometheus_client import REGISTRY, Counter, Gauge, Histogram
 
 # Bot
 bot_commands_total = Counter(

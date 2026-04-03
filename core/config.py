@@ -1,8 +1,9 @@
 """Application configuration from environment."""
-import os
+
 from functools import lru_cache
-from pydantic_settings import BaseSettings
+
 from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -45,7 +46,9 @@ class Settings(BaseSettings):
     # Rate limits (per user)
     rate_limit_create_task_per_hour: int = Field(default=5, alias="RATE_LIMIT_CREATE_TASK_PER_HOUR")
     rate_limit_create_bid_per_hour: int = Field(default=20, alias="RATE_LIMIT_CREATE_BID_PER_HOUR")
-    rate_limit_send_message_per_minute: int = Field(default=30, alias="RATE_LIMIT_SEND_MESSAGE_PER_MINUTE")
+    rate_limit_send_message_per_minute: int = Field(
+        default=30, alias="RATE_LIMIT_SEND_MESSAGE_PER_MINUTE"
+    )
     rate_limit_verification_per_day: int = Field(default=3, alias="RATE_LIMIT_VERIFICATION_PER_DAY")
 
     class Config:

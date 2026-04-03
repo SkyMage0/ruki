@@ -1,6 +1,6 @@
-from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+
+from pydantic import BaseModel
 
 
 class TaskCreate(BaseModel):
@@ -25,7 +25,7 @@ class TaskRead(BaseModel):
     payment_amount: int
     status: str
     created_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
     class Config:
         from_attributes = True

@@ -1,10 +1,10 @@
 import sys
-from pathlib import Path
 from logging.config import fileConfig
+from pathlib import Path
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from alembic import context
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

@@ -1,7 +1,6 @@
 """Bid CRUD and accept/reject."""
-from typing import List, Optional
 
-from sqlalchemy import select, update, func
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -25,9 +24,9 @@ async def create_bid(
     session: AsyncSession,
     task_id: int,
     worker_id: int,
-    message: Optional[str] = None,
-    proposed_amount: Optional[int] = None,
-) -> Optional[Bid]:
+    message: str | None = None,
+    proposed_amount: int | None = None,
+) -> Bid | None:
     # Check unique (task_id, worker_id)
     existing = await session.execute(
         select(Bid).where(Bid.task_id == task_id, Bid.worker_id == worker_id)
@@ -47,14 +46,14 @@ async def create_bid(
     return bid
 
 
-async def get_bids_for_task(session: AsyncSession, task_id: int) -> List[Bid]:
+async def get_bids_for_task(session: AsyncSession, task_id: int) -> list[Bid]:
     result = await session.execute(
         select(Bid).where(Bid.task_id == task_id).options(selectinload(Bid.worker))
     )
     return list(result.scalars().all())
 
 
-async def accept_bid(session: AsyncSession, bid_id: int) -> Optional[Bid]:
+async def accept_bid(session: AsyncSession, bid_id: int) -> Bid | None:
     """Принять отклик. Если набрано workers_needed — задача закрыта для новых, остальные отклики отклоняем."""
     result = await session.execute(
         select(Bid)
@@ -75,18 +74,20 @@ async def accept_bid(session: AsyncSession, bid_id: int) -> Optional[Bid]:
         bid.task.status = TaskStatus.in_progress.value
         # Закрываем набор: отклоняем все оставшиеся pending
         await session.execute(
-            update(Bid).where(
+            update(Bid)
+            .where(
                 Bid.task_id == bid.task_id,
                 Bid.id != bid.id,
                 Bid.status == BidStatus.pending.value,
-            ).values(status=BidStatus.rejected.value)
+            )
+            .values(status=BidStatus.rejected.value)
         )
     await session.flush()
     await session.refresh(bid)
     return bid
 
 
-async def reject_bid(session: AsyncSession, bid_id: int) -> Optional[Bid]:
+async def reject_bid(session: AsyncSession, bid_id: int) -> Bid | None:
     result = await session.execute(select(Bid).where(Bid.id == bid_id))
     bid = result.scalar_one_or_none()
     if not bid or bid.status != BidStatus.pending.value:
@@ -97,8 +98,10 @@ async def reject_bid(session: AsyncSession, bid_id: int) -> Optional[Bid]:
     return bid
 
 
-async def get_bid_by_id(session: AsyncSession, bid_id: int) -> Optional[Bid]:
+async def get_bid_by_id(session: AsyncSession, bid_id: int) -> Bid | None:
     result = await session.execute(
-        select(Bid).where(Bid.id == bid_id).options(selectinload(Bid.task), selectinload(Bid.worker))
+        select(Bid)
+        .where(Bid.id == bid_id)
+        .options(selectinload(Bid.task), selectinload(Bid.worker))
     )
     return result.scalar_one_or_none()

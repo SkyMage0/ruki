@@ -1,7 +1,7 @@
 """JSON logging to stdout for ELK/Loki. No PII in logs."""
+
 import logging
 import sys
-from typing import Any
 
 import structlog
 
